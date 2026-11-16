@@ -93,8 +93,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .done { text-align: center; display: grid; gap: 10px; }
 .done h2 { font-family: var(--f-display); font-weight: 400; font-size: 40px; margin: 0; line-height: 1.05; }
 .done p { margin: 0; color: var(--muted); }
+.login { display: grid; gap: 16px; }
+.login p { margin: 0; color: var(--muted); text-align: center; }
+.code-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+#code { text-transform: uppercase; letter-spacing: .2em; font-weight: 600; text-align: center; font-size: 20px; }
+.hello { text-align: center; display: grid; gap: 4px; }
+.hello h2 { font-family: var(--f-display); font-weight: 400; font-size: 34px; line-height: 1.1; margin: 0; }
+.hello p { margin: 0; color: var(--muted); font-size: 14px; }
 .link-btn { background: none; color: var(--accent); padding: 0; min-height: 0; text-decoration: underline; font-weight: 500; }
-@media (max-width: 420px) { .choices { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .choices, .code-row { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -110,10 +117,22 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
   <hr class="rule">
 
-  <form id="rsvp" novalidate>
+  <form class="login" id="login" novalidate>
+    <p>Skriv koden från din inbjudan för att svara.</p>
     <div class="field">
-      <label for="name">Ditt namn</label>
-      <input type="text" id="name" name="name" autocomplete="name" required maxlength="120">
+      <label for="code">Din kod</label>
+      <div class="code-row">
+        <input type="text" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="T.ex. K7MX3Q">
+        <button type="submit" id="login-btn">Fortsätt</button>
+      </div>
+    </div>
+    <p class="error" id="login-error" role="alert" hidden></p>
+  </form>
+
+  <form id="rsvp" novalidate hidden>
+    <div class="hello">
+      <h2 id="hello"></h2>
+      <p id="hello-sub"></p>
     </div>
 
     <fieldset>
@@ -125,9 +144,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     </fieldset>
 
     <div id="yes-fields" hidden style="display:grid;gap:20px">
-      <div class="field">
+      <div class="field" id="plus-field" hidden>
         <label class="check"><input type="checkbox" id="plus"> Jag tar med min respektive</label>
-        <span class="hint">Bara om inbjudan gäller er båda.</span>
       </div>
       <div class="field" id="partner-field" hidden>
         <label for="partner">Respektives namn</label>
@@ -161,7 +179,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   <section class="done" id="done" hidden>
     <h2 id="done-title"></h2>
     <p id="done-text"></p>
-    <p><button type="button" class="link-btn" id="again">Svara för någon till</button></p>
+    <p><button type="button" class="link-btn" id="again">Ändra mitt svar</button></p>
   </section>
 </main>
 
@@ -199,55 +217,108 @@ if (CONFIG.baptism) {
 }
 if (CONFIG.deadline) { const d = $('#deadline'); d.textContent = 'Svara senast ' + shortDate(CONFIG.deadline); d.hidden = false; }
 
-// Conditional fields
+// Login with personal code
 const form = $('#rsvp');
+const login = $('#login');
+let guest = null; // { code, name, plusOne, answer }
+const first = (n) => String(n).split(' ')[0];
+const normCode = (c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function showError(msg) { const el = $('#error'); el.textContent = msg; el.hidden = !msg; }
+function loginError(msg) { const el = $('#login-error'); el.textContent = msg; el.hidden = !msg; }
+
+async function lookup(code) {
+  loginError('');
+  if (!CONFIG.scriptUrl) { loginError('OSA-sidan är inte kopplad till kalkylarket än.'); return; }
+  if (code.length < 4) { loginError('Skriv in hela koden från din inbjudan.'); $('#code').focus(); return; }
+  const btn = $('#login-btn'); btn.disabled = true; btn.textContent = 'Kollar…';
+  try {
+    const res = await fetch(CONFIG.scriptUrl + '?kod=' + encodeURIComponent(code));
+    const data = await res.json();
+    if (!data.ok) {
+      loginError(data.error === 'unknown_code' ? 'Koden hittades inte. Kontrollera att du skrivit rätt, eller hör av dig till oss.' : 'Något gick fel. Försök igen om en stund.');
+      $('#code').focus(); return;
+    }
+    guest = { code, name: data.name, plusOne: !!data.plusOne, answer: data.answer };
+    try { sessionStorage.setItem('osaCode', code); } catch (_) {}
+    if (!new URLSearchParams(location.search).get('kod')) history.replaceState(null, '', '?kod=' + code);
+    openForm();
+  } catch (err) {
+    loginError('Kunde inte nå svarslistan. Kontrollera internetanslutningen och försök igen.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Fortsätt';
+  }
+}
+
+function openForm() {
+  form.reset();
+  const a = guest.answer;
+  $('#hello').textContent = `Hej ${first(guest.name)}!`;
+  $('#hello-sub').textContent = a
+    ? `Du har redan svarat ${a.coming === 'Ja' ? 'att du kommer' : 'att du inte kan komma'}. Du kan ändra ditt svar här.`
+    : (guest.plusOne ? 'Inbjudan gäller dig och din respektive.' : `Du svarar som ${guest.name}.`);
+  $('#plus-field').hidden = !guest.plusOne;
+  if (a) {
+    const r = form.querySelector(`input[name="coming"][value="${a.coming}"]`); if (r) r.checked = true;
+    if (guest.plusOne && a.partner) { $('#plus').checked = true; $('#partner').value = /^ja$/i.test(a.partner) ? '' : a.partner; }
+    $('#diet').value = a.diet || ''; $('#contact').value = a.contact || ''; $('#message').value = a.message || '';
+  }
+  $('#yes-fields').hidden = form.coming.value !== 'Ja';
+  $('#partner-field').hidden = !$('#plus').checked;
+  $('#submit').textContent = a ? 'Uppdatera svar' : 'Skicka svar';
+  showError('');
+  login.hidden = true; $('#done').hidden = true; form.hidden = false;
+}
+
+login.addEventListener('submit', (e) => { e.preventDefault(); lookup(normCode($('#code').value)); });
+
+// Conditional fields
 form.addEventListener('change', (e) => {
   if (e.target.name === 'coming') $('#yes-fields').hidden = e.target.value !== 'Ja';
   if (e.target.id === 'plus') $('#partner-field').hidden = !e.target.checked;
 });
 
-function showError(msg) { const el = $('#error'); el.textContent = msg; el.hidden = !msg; }
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   showError('');
-  const name = $('#name').value.trim();
   const coming = form.coming.value;
-  if (!name) { showError('Skriv ditt namn.'); $('#name').focus(); return; }
   if (!coming) { showError('Välj om du kommer eller inte.'); return; }
-  if (!CONFIG.scriptUrl) { showError('Formuläret är inte kopplat till kalkylarket än. Lägg in scriptUrl i filen.'); return; }
 
   const yes = coming === 'Ja';
-  const body = new URLSearchParams({
-    name,
+  const fields = {
     coming,
-    partner: yes && $('#plus').checked ? ($('#partner').value.trim() || 'Ja') : '',
+    partner: yes && guest.plusOne && $('#plus').checked ? ($('#partner').value.trim() || 'Ja') : '',
     diet: yes ? $('#diet').value.trim() : '',
     contact: $('#contact').value.trim(),
     message: $('#message').value.trim(),
-    website: $('#website').value,
-  });
+  };
+  const body = new URLSearchParams({ kod: guest.code, ...fields, website: $('#website').value });
 
-  const btn = $('#submit'); btn.disabled = true; btn.textContent = 'Skickar…';
+  const btn = $('#submit'); const label = btn.textContent; btn.disabled = true; btn.textContent = 'Skickar…';
   try {
     const res = await fetch(CONFIG.scriptUrl, { method: 'POST', body });
     const data = await res.json().catch(() => ({ ok: res.ok }));
     if (!data.ok) throw new Error(data.error || 'Okänt fel');
+    guest.answer = fields;
     form.hidden = true;
-    $('#done-title').textContent = yes ? `Tack, ${name.split(' ')[0]}!` : `Tack för att du svarade, ${name.split(' ')[0]}`;
+    $('#done-title').textContent = yes ? `Tack, ${first(guest.name)}!` : `Tack för att du svarade, ${first(guest.name)}`;
     $('#done-text').textContent = yes ? `Vi ses ${shortDate(CONFIG.date)}. Vi längtar!` : 'Vad tråkigt att du inte kan komma. Vi tänker på dig den dagen.';
     $('#done').hidden = false;
   } catch (err) {
-    showError('Svaret kunde inte skickas. Kontrollera internetanslutningen och försök igen, eller hör av dig direkt till oss.');
+    showError(err.message === 'unknown_code'
+      ? 'Din kod gäller inte längre. Hör av dig till oss så hjälper vi dig.'
+      : 'Svaret kunde inte skickas. Kontrollera internetanslutningen och försök igen, eller hör av dig direkt till oss.');
   } finally {
-    btn.disabled = false; btn.textContent = 'Skicka svar';
+    btn.disabled = false; btn.textContent = label;
   }
 });
 
-$('#again').addEventListener('click', () => {
-  form.reset(); $('#yes-fields').hidden = true; $('#partner-field').hidden = true;
-  $('#done').hidden = true; form.hidden = false; $('#name').focus();
-});
+$('#again').addEventListener('click', openForm);
+
+// A personal link (?kod=…) or a code entered earlier in this tab logs in directly.
+let saved = normCode(new URLSearchParams(location.search).get('kod'));
+if (!saved) { try { saved = normCode(sessionStorage.getItem('osaCode')); } catch (_) {} }
+if (saved) { $('#code').value = saved; lookup(saved); }
 </script>
 </body>
 </html>
