@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OSA till vårt bröllop</title>
+<meta name="description" content="Svara om du kommer på bröllopet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centered invitation card; the wedding facts on top, the reply form below. */
+:root {
+  --bg: #EEF3EF;
+  --card: #FFFFFF;
+  --ink: #1B2621;
+  --muted: #5B6A62;
+  --line: #D6E0D9;
+  --accent: #2C6853;
+  --accent-soft: #E2EEE8;
+  --on-accent: #FFFFFF;
+  --bad: #B03447;
+  --f-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101613; --card: #18201C; --ink: #E5ECE7; --muted: #98A79F; --line: #2A3630;
+    --accent: #7DC0A5; --accent-soft: #1F3730; --on-accent: #0D1813; --bad: #EC7D8E;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  padding-block: max(32px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.card {
+  max-width: 560px; margin: 0 auto; background: var(--card);
+  border: 1px solid var(--line); border-radius: 18px;
+  padding: clamp(24px, 6vw, 48px);
+  display: grid; gap: 28px;
+}
+.intro { text-align: center; display: grid; gap: 10px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(40px, 10vw, 60px); line-height: 1.02; margin: 0; text-wrap: balance; }
+h1 em { color: var(--accent); }
+.facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; color: var(--muted); }
+.facts strong { color: var(--ink); font-weight: 600; }
+.baptism { margin: 2px auto 0; max-width: 40ch; font-family: var(--f-display); font-style: italic; font-size: 22px; line-height: 1.25; color: var(--accent); text-wrap: balance; }
+.deadline { display: inline-block; margin: 6px auto 0; padding: 4px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: 500; }
+.rule { height: 1px; background: var(--line); border: 0; margin: 0; }
+
+form { display: grid; gap: 20px; }
+.field { display: grid; gap: 6px; }
+label, legend { font-weight: 500; font-size: 15px; }
+.hint { font-size: 13px; color: var(--muted); font-weight: 400; }
+input[type="text"], input[type="email"], textarea {
+  font: inherit; color: inherit; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; width: 100%;
+}
+textarea { min-height: 90px; resize: vertical; }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.choice { position: relative; }
+.choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.choice span {
+  display: grid; place-items: center; text-align: center; min-height: 64px; padding: 10px;
+  border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+  font-family: var(--f-display); font-size: 22px; line-height: 1.1;
+}
+.choice input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; gap: 10px; align-items: center; cursor: pointer; font-weight: 500; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; }
+.trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+button {
+  font: inherit; font-weight: 600; border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); padding: 14px 18px; min-height: 52px;
+}
+button:hover { filter: brightness(1.07); }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.error { color: var(--bad); font-size: 14px; margin: 0; }
+.done { text-align: center; display: grid; gap: 10px; }
+.done h2 { font-family: var(--f-display); font-weight: 400; font-size: 40px; margin: 0; line-height: 1.05; }
+.done p { margin: 0; color: var(--muted); }
+.link-btn { background: none; color: var(--accent); padding: 0; min-height: 0; text-decoration: underline; font-weight: 500; }
+@media (max-width: 420px) { .choices { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="card">
+  <section class="intro">
+    <div class="eyebrow" id="eyebrow">Välkommen på bröllop</div>
+    <h1 id="couple"></h1>
+    <div class="facts" id="facts"></div>
+    <p class="baptism" id="baptism" hidden></p>
+    <div><span class="deadline" id="deadline" hidden></span></div>
+  </section>
+
+  <hr class="rule">
+
+  <form id="rsvp" novalidate>
+    <div class="field">
+      <label for="name">Ditt namn</label>
+      <input type="text" id="name" name="name" autocomplete="name" required maxlength="120">
+    </div>
+
+    <fieldset>
+      <legend>Kommer du?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="coming" value="Ja" required><span>Ja</span></label>
+        <label class="choice"><input type="radio" name="coming" value="Nej"><span>Nej</span></label>
+      </div>
+    </fieldset>
+
+    <div id="yes-fields" hidden style="display:grid;gap:20px">
+      <div class="field">
+        <label class="check"><input type="checkbox" id="plus"> Jag tar med min respektive</label>
+        <span class="hint">Bara om inbjudan gäller er båda.</span>
+      </div>
+      <div class="field" id="partner-field" hidden>
+        <label for="partner">Respektives namn</label>
+        <input type="text" id="partner" name="partner" maxlength="120">
+      </div>
+      <div class="field">
+        <label for="diet">Kost och allergier <span class="hint">(valfritt)</span></label>
+        <input type="text" id="diet" name="diet" maxlength="300" placeholder="T.ex. vegetarian, glutenfritt, nötallergi">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="contact">E-post eller telefon <span class="hint">(valfritt)</span></label>
+      <input type="text" id="contact" name="contact" autocomplete="email" maxlength="120">
+    </div>
+
+    <div class="field">
+      <label for="message">Hälsning till oss <span class="hint">(valfritt)</span></label>
+      <textarea id="message" name="message" maxlength="1000"></textarea>
+    </div>
+
+    <div class="trap" aria-hidden="true">
+      <label for="website">Lämna tomt</label>
+      <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    <p class="error" id="error" role="alert" hidden></p>
+    <button type="submit" id="submit">Skicka svar</button>
+  </form>
+
+  <section class="done" id="done" hidden>
+    <h2 id="done-title"></h2>
+    <p id="done-text"></p>
+    <p><button type="button" class="link-btn" id="again">Svara för någon till</button></p>
+  </section>
+</main>
+
+<script>
+/* ===== Ändra här ===== */
+const CONFIG = {
+  couple: 'Hugo & Emilie',              // era namn
+  date: '2027-05-08',                   // bröllopsdag, ÅÅÅÅ-MM-DD
+  time: '',                             // tid för vigseln, t.ex. '14.00' (tomt = visas inte)
+  place: 'Söndrum Kyrka',               // plats
+  baptism: 'Lilly och Malcolm',         // barn som döps samma dag (tomt = inget dop)
+  deadline: '2027-04-01',               // sista dag att OSA, ÅÅÅÅ-MM-DD
+  scriptUrl: '',                        // webbappens URL från Google Apps Script (slutar på /exec)
+};
+/* ===================== */
+
+const $ = (s) => document.querySelector(s);
+const longDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const shortDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+
+// Header
+const parts = CONFIG.couple.split(/\s*(?:&|och|\+)\s*/);
+const h = $('#couple');
+if (parts.length === 2) { h.append(parts[0] + ' '); const em = document.createElement('em'); em.textContent = '&'; h.append(em, ' ' + parts[1]); }
+else h.textContent = CONFIG.couple;
+document.title = 'OSA · ' + CONFIG.couple;
+const facts = $('#facts');
+[[longDate(CONFIG.date), true], [CONFIG.time ? 'kl. ' + CONFIG.time : '', false], [CONFIG.place, false]].forEach(([t, strong]) => {
+  if (!t) return; const s = document.createElement(strong ? 'strong' : 'span'); s.textContent = t; facts.append(s);
+});
+if (CONFIG.baptism) {
+  $('#eyebrow').textContent = 'Välkommen på bröllop och dop';
+  const b = $('#baptism'); b.textContent = `Samma dag döper vi ${CONFIG.baptism}`; b.hidden = false;
+  document.title = 'OSA · Bröllop och dop';
+}
+if (CONFIG.deadline) { const d = $('#deadline'); d.textContent = 'Svara senast ' + shortDate(CONFIG.deadline); d.hidden = false; }
+
+// Conditional fields
+const form = $('#rsvp');
+form.addEventListener('change', (e) => {
+  if (e.target.name === 'coming') $('#yes-fields').hidden = e.target.value !== 'Ja';
+  if (e.target.id === 'plus') $('#partner-field').hidden = !e.target.checked;
+});
+
+function showError(msg) { const el = $('#error'); el.textContent = msg; el.hidden = !msg; }
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  showError('');
+  const name = $('#name').value.trim();
+  const coming = form.coming.value;
+  if (!name) { showError('Skriv ditt namn.'); $('#name').focus(); return; }
+  if (!coming) { showError('Välj om du kommer eller inte.'); return; }
+  if (!CONFIG.scriptUrl) { showError('Formuläret är inte kopplat till kalkylarket än. Lägg in scriptUrl i filen.'); return; }
+
+  const yes = coming === 'Ja';
+  const body = new URLSearchParams({
+    name,
+    coming,
+    partner: yes && $('#plus').checked ? ($('#partner').value.trim() || 'Ja') : '',
+    diet: yes ? $('#diet').value.trim() : '',
+    contact: $('#contact').value.trim(),
+    message: $('#message').value.trim(),
+    website: $('#website').value,
+  });
+
+  const btn = $('#submit'); btn.disabled = true; btn.textContent = 'Skickar…';
+  try {
+    const res = await fetch(CONFIG.scriptUrl, { method: 'POST', body });
+    const data = await res.json().catch(() => ({ ok: res.ok }));
+    if (!data.ok) throw new Error(data.error || 'Okänt fel');
+    form.hidden = true;
+    $('#done-title').textContent = yes ? `Tack, ${name.split(' ')[0]}!` : `Tack för att du svarade, ${name.split(' ')[0]}`;
+    $('#done-text').textContent = yes ? `Vi ses ${shortDate(CONFIG.date)}. Vi längtar!` : 'Vad tråkigt att du inte kan komma. Vi tänker på dig den dagen.';
+    $('#done').hidden = false;
+  } catch (err) {
+    showError('Svaret kunde inte skickas. Kontrollera internetanslutningen och försök igen, eller hör av dig direkt till oss.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Skicka svar';
+  }
+});
+
+$('#again').addEventListener('click', () => {
+  form.reset(); $('#yes-fields').hidden = true; $('#partner-field').hidden = true;
+  $('#done').hidden = true; form.hidden = false; $('#name').focus();
+});
+</script>
+</body>
+</html>
